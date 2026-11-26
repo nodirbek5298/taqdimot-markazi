@@ -50,22 +50,22 @@ iframe{width:100%;height:100%;border:0}
 <header><h1>✦ TAQDIMOT MARKAZI ✦</h1><p>Hujjatni yuklang — istalgan qurilmada oching, yuklab oling yoki taqdim eting</p></header>
 
 <main>
-<div class="card" id="setup">
- <b>⚙ GitHub sozlamasi</b> <small style="color:var(--mu)">(bir marta, shu brauzerda saqlanadi)</small><br><br>
- <label>GitHub username</label><input id="o" placeholder="nodirbek5298">
- <label>Repository nomi (hujjatlar shu yerda saqlanadi)</label><input id="r" placeholder="hujjatlarim">
- <label>Branch</label><input id="b" value="main">
- <label>Token (GitHub → Settings → Developer settings → Fine-grained token, Contents: Read and write)</label><input id="t" type="password" placeholder="github_pat_...">
- <button onclick="saveCfg()">Saqlash</button>
+<div class="card hide" id="setup">
+ <b>🔑 Tahrirlash rejimi</b> <small style="color:var(--mu)">(faqat fayl yuklash, o'chirish va almashtirish uchun kerak. Ko'rish va yuklab olish uchun shart emas)</small><br><br>
+ <label>GitHub username</label><input id="o">
+ <label>Repository nomi</label><input id="r">
+ <label>Branch</label><input id="b">
+ <label>Token (Fine-grained, Contents: Read and write)</label><input id="t" type="password" placeholder="github_pat_...">
+ <div class="row"><button onclick="saveCfg()">Saqlash</button><button class="sec" onclick="logout()">🚪 Chiqish (tokenni o'chirish)</button></div>
 </div>
 
-<div class="card" id="up">
+<div class="card hide" id="up">
  <div class="drop" id="drop" onclick="f.click()">📂 Faylni shu yerga tashlang yoki bosing<br><small>PDF, PPTX, DOCX va boshqalar</small></div>
  <input type="file" id="f" class="hide" multiple>
  <div id="msg"></div>
 </div>
 
-<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><b>📑 Hujjatlarim</b><div class="row"><button class="sec" onclick="load()">↻ Yangilash</button><button class="sec" onclick="setup.classList.toggle('hide')">⚙</button></div></div><div id="list"></div></div>
+<div class="card"><div class="row" style="justify-content:space-between;align-items:center"><b>📑 Hujjatlarim</b><div class="row"><button class="sec" onclick="load()">↻ Yangilash</button><button class="sec" onclick="setup.classList.toggle('hide')">🔑</button></div></div><div id="list"></div></div>
 </main>
 
 <div id="viewer">
@@ -74,34 +74,38 @@ iframe{width:100%;height:100%;border:0}
 </div>
 
 <script>
-const $=id=>document.getElementById(id), DIR='hujjatlar';
-let cfg={};try{cfg=JSON.parse(localStorage.getItem('cfg')||'{}')}catch(e){}
-['o','r','b','t'].forEach(k=>{if(cfg[k])$(k).value=cfg[k]});
-if(cfg.o&&cfg.r&&cfg.t)$('setup').classList.add('hide');
+const $=id=>document.getElementById(id), DIR='hujjatlar', DEF={o:'nodirbek5298',r:'hujjatlarim',b:'main',t:''};
+let cfg={...DEF};try{Object.assign(cfg,JSON.parse(localStorage.getItem('cfg')||'{}'))}catch(e){}
+['o','r','b','t'].forEach(k=>{$(k).value=cfg[k]||''});
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-function saveCfg(){cfg={o:$('o').value.trim(),r:$('r').value.trim(),b:$('b').value.trim()||'main',t:$('t').value.trim()};
+function mode(){$('up').classList.toggle('hide',!cfg.t)}
+function saveCfg(){cfg={o:$('o').value.trim()||DEF.o,r:$('r').value.trim()||DEF.r,b:$('b').value.trim()||DEF.b,t:$('t').value.trim()};
  try{localStorage.setItem('cfg',JSON.stringify(cfg))}catch(e){}
  $('setup').classList.add('hide');load()}
+function logout(){cfg.t='';$('t').value='';try{localStorage.setItem('cfg',JSON.stringify(cfg))}catch(e){}$('setup').classList.add('hide');load()}
 const say=m=>$('msg').textContent=m;
 const url=n=>`https://api.github.com/repos/${cfg.o}/${cfg.r}/contents/${DIR}${n?'/'+encodeURIComponent(n):''}`;
-const H=(extra={})=>({Authorization:'Bearer '+cfg.t,Accept:'application/vnd.github+json',...extra});
+const H=(extra={})=>({...(cfg.t?{Authorization:'Bearer '+cfg.t}:{}),Accept:'application/vnd.github+json',...extra});
 async function load(){
- if(!cfg.o||!cfg.r){$('list').innerHTML='<p style="color:var(--mu)">Avval GitHub sozlamasini kiriting.</p>';return}
+ mode();
  $('list').innerHTML='<p style="color:var(--mu)">Yuklanmoqda…</p>';
  const r=await fetch(url('')+'?ref='+cfg.b+'&t='+Date.now(),{headers:H()});
- if(r.status==404){$('list').innerHTML='<p style="color:var(--mu)">Hozircha hujjat yo\'q.</p>';return}
- if(!r.ok){$('list').innerHTML='<p style="color:#ff8d8d">Xato: '+r.status+' (token yoki repo nomini tekshiring)</p>';return}
+ if(r.status==404){$('list').innerHTML='<p style="color:var(--mu)">Hozircha hujjat yo\'q (yoki repo private — bunda 🔑 orqali token kiriting).</p>';return}
+ if(!r.ok){$('list').innerHTML='<p style="color:#ff8d8d">Xato: '+r.status+'</p>';return}
  const a=(await r.json()).filter(x=>x.type=='file'&&x.name!='.gitkeep');
  $('list').innerHTML=a.length?'':'<p style="color:var(--mu)">Hozircha hujjat yo\'q.</p>';
  a.forEach(x=>{const e=x.name.split('.').pop().toLowerCase(),d=document.createElement('div');d.className='item';
-  d.innerHTML=`<span class="tag">${e.toUpperCase()}</span><span class="nm">${x.name}<br><small style="color:var(--mu)">${(x.size/1048576).toFixed(2)} MB</small></span>`;
+  const tg=document.createElement('span');tg.className='tag';tg.textContent=e.toUpperCase();
+  const nm=document.createElement('span');nm.className='nm';nm.textContent=x.name;
+  const sz=document.createElement('small');sz.style.color='var(--mu)';sz.textContent=(x.size/1048576).toFixed(2)+' MB';nm.appendChild(document.createElement('br'));nm.appendChild(sz);
+  d.append(tg,nm);
   const row=document.createElement('div');row.className='row';
   const B=(t,c,fn)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=fn;row.appendChild(b)};
   if(e=='pdf'||e=='pptx'||e=='ppt')B('▶ Taqdim etish','',()=>present(x,e));
   B('⬇ Yuklab olish','sec',()=>dl(x));
-  B('✎ Nomini o\'zgartirish','sec',()=>ren(x));
+  if(cfg.t){B('✎ Nomini o\'zgartirish','sec',()=>ren(x));
   B('⟳ Almashtirish','sec',()=>rep(x));
-  B('🗑 O\'chirish','dng',()=>del(x));
+  B('🗑 O\'chirish','dng',()=>del(x));}
   d.appendChild(row);$('list').appendChild(d)})
 }
 async function raw(x){const r=await fetch(x.url,{headers:H({Accept:'application/vnd.github.raw'})});if(!r.ok)throw 0;return r.blob()}
@@ -112,7 +116,7 @@ async function put(name,file){
  const r=await fetch(url(name),{method:'PUT',headers:H({'Content-Type':'application/json'}),body:JSON.stringify({message:'upload '+name,content:await b64(file),branch:cfg.b,sha})});
  if(!r.ok)throw new Error(r.status)}
 async function upAll(files){
- if(!cfg.t){say('Avval sozlamani kiriting');setup.classList.remove('hide');return}
+ if(!cfg.t){say('Yuklash uchun 🔑 orqali token kiriting');setup.classList.remove('hide');return}
  for(const f of files){say('Yuklanmoqda: '+f.name+' …');try{await put(f.name,f)}catch(e){say('Xato: '+f.name+' ('+e.message+')');return}}
  say('✓ Yuklandi');load()}
 $('f').onchange=e=>upAll([...e.target.files]);
