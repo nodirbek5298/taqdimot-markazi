@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Taqdimot Markazi</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{--bg:#050d0c;--tq:#1fc8b8;--gr:#1b8f5a;--gold:#d9b45a;--tx:#e6f5f2;--mu:#9cc4bd;--glass:rgba(14,38,35,.42);--gb:rgba(255,255,255,.14)}
 *{box-sizing:border-box}
@@ -26,11 +27,11 @@ h1{margin:4px 0 0;font-size:clamp(24px,5vw,38px);letter-spacing:2px;background:l
 header p{margin:6px 0 0;color:var(--mu)}
 main{max-width:980px;margin:0 auto;padding:20px}
 .card{background:var(--glass);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--gb);border-radius:18px;padding:18px;margin-bottom:18px;box-shadow:0 8px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.18);animation:rise .7s both}
-.card:nth-of-type(2){animation-delay:.1s}.card:nth-of-type(3){animation-delay:.2s}
 button,.btn{background:linear-gradient(135deg,rgba(31,200,184,.9),rgba(27,143,90,.9));color:#031210;border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 14px rgba(31,200,184,.25);transition:transform .2s,box-shadow .2s}
-button:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 8px 20px rgba(31,200,184,.4)}
+button:hover{transform:translateY(-2px)}
 button.sec{background:rgba(255,255,255,.06);color:var(--tq);border:1px solid rgba(31,200,184,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);backdrop-filter:blur(8px)}
 button.dng{background:rgba(255,100,100,.07);color:#ff9d9d;border:1px solid rgba(255,141,141,.55);box-shadow:none}
+button.on{outline:2px solid var(--gold);background:rgba(217,180,90,.2)}
 input{background:rgba(0,0,0,.28);border:1px solid var(--gb);color:var(--tx);border-radius:10px;padding:10px;width:100%;margin:4px 0 10px;backdrop-filter:blur(6px)}
 input:focus{outline:none;border-color:var(--tq);box-shadow:0 0 0 3px rgba(31,200,184,.2)}
 label{font-size:13px;color:var(--mu)}
@@ -41,14 +42,31 @@ label{font-size:13px;color:var(--mu)}
 .item .nm{flex:1;min-width:160px;word-break:break-all}
 .tag{font-size:11px;background:linear-gradient(135deg,var(--gold),#f3dc9a);color:#222;border-radius:7px;padding:3px 8px;font-weight:800}
 .row{display:flex;gap:8px;flex-wrap:wrap}
+.gh{margin:14px 0 6px;color:var(--gold);font-weight:700}
+#chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+#chips button{padding:6px 12px;font-size:13px}
 #viewer{position:fixed;inset:0;background:#000;z-index:10;display:none;flex-direction:column}
 #viewer.show{display:flex}
-#vbar{display:flex;gap:8px;padding:8px;background:rgba(10,29,27,.75);backdrop-filter:blur(16px);align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--gb)}
-#vbar span{color:var(--mu);flex:1;text-align:center}
-#vbody{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+#vbar{display:flex;gap:6px;padding:8px;background:rgba(10,29,27,.8);backdrop-filter:blur(16px);align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--gb)}
+#vbar button{padding:8px 11px}
+#vbar #vt{color:var(--mu);flex:1;text-align:center;min-width:80px}
+#tm{color:var(--gold);font-weight:700}
+#vwrap{flex:1;display:flex;min-height:0}
+#th{width:0;overflow-y:auto;background:rgba(10,29,27,.85);display:flex;flex-direction:column;gap:8px;transition:width .25s;padding:0}
+#th.open{width:150px;padding:8px}
+#th canvas{width:100%;border:2px solid transparent;border-radius:6px;cursor:pointer;flex-shrink:0}
+#th canvas.cur{border-color:var(--gold)}
+#vbody{flex:1;position:relative;overflow:hidden;min-width:0}
+#vcont{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 #cv{max-width:100%;max-height:100%}
 iframe{width:100%;height:100%;border:0}
 .nav{position:absolute;top:0;bottom:0;width:18%;cursor:pointer}
+#ov{position:absolute;inset:0;z-index:5;pointer-events:none;touch-action:none}
+#laser{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:radial-gradient(circle,#fff 0,#ff3b3b 40%,rgba(255,59,59,0) 70%);box-shadow:0 0 18px 8px rgba(255,59,59,.7);display:none;z-index:6;pointer-events:none}
+#md{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:20px}
+#md.show{display:flex}
+#md .card{max-width:340px;width:100%;text-align:center;margin:0}
+#qr{background:#fff;padding:12px;border-radius:12px;display:inline-block;margin:10px 0}
 #msg{color:var(--gold);font-size:14px;min-height:20px}
 .hide{display:none}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
@@ -83,41 +101,70 @@ iframe{width:100%;height:100%;border:0}
 </div>
 
 <div class="card hide" id="up">
+ <label>Papka (ixtiyoriy, masalan: Menejment)</label><input id="fi" list="fl" placeholder="Papkasiz yuklash uchun bo'sh qoldiring"><datalist id="fl"></datalist>
  <div class="drop" id="drop" onclick="f.click()">📂 Faylni shu yerga tashlang yoki bosing<br><small>PDF, PPTX, DOCX va boshqalar</small></div>
  <input type="file" id="f" class="hide" multiple>
  <div id="msg"></div>
 </div>
 
-<div class="card"><div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px"><b>📑 Hujjatlarim</b><div class="row"><button class="sec" onclick="load()">↻ Yangilash</button><button class="sec" onclick="setup.classList.toggle('hide')">🔑</button></div></div><div id="list"></div></div>
+<div class="card"><div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px"><b>📑 Hujjatlarim</b><div class="row"><button class="sec" onclick="load()">↻ Yangilash</button><button class="sec" onclick="setup.classList.toggle('hide')">🔑</button></div></div>
+<input id="sq" placeholder="🔍 Hujjat qidirish…" oninput="q=this.value;render()"><div id="chips"></div><div id="list"></div></div>
 </main>
 
 <div id="viewer">
- <div id="vbar"><button class="sec" onclick="closeV()">✕ Yopish</button><span id="vt"></span><button id="pr" class="sec">◀</button><button id="nx" class="sec">▶</button><button onclick="fs()">⛶ To'liq ekran</button></div>
- <div id="vbody"></div>
+ <div id="vbar"><button class="sec" onclick="closeV()">✕</button><span id="vt"></span><span id="tm"></span>
+ <button class="sec" id="bt0" onclick="setTool('')" title="Oddiy rejim">✋</button><button class="sec" id="bt1" onclick="setTool('pen')" title="Qalam (qayta bossangiz rang almashadi)">✏</button><button class="sec" id="bt2" onclick="setTool('laser')" title="Lazer">🔴</button><button class="sec" onclick="clr()" title="Chizmani tozalash">🧽</button><button class="sec" onclick="timer()" title="Taymer">⏱</button><button class="sec" id="bth" onclick="togTh()" title="Slaydlar">▦</button><button id="pr" class="sec">◀</button><button id="nx" class="sec">▶</button><button onclick="fs()">⛶</button></div>
+ <div id="vwrap"><div id="th"></div><div id="vbody"><div id="vcont"></div><canvas id="ov"></canvas><div id="laser"></div></div></div>
 </div>
+
+<div id="md" onclick="if(event.target==this)this.classList.remove('show')"><div class="card">
+ <b id="mt"></b><br><div id="qr"></div><br><input id="mu" readonly onclick="this.select()">
+ <div class="row" style="justify-content:center"><button onclick="cp()">📋 Nusxalash</button><button class="sec" onclick="md.classList.remove('show')">Yopish</button></div>
+</div></div>
 
 <script>
 const $=id=>document.getElementById(id), DIR='hujjatlar', DEF={o:'nodirbek5298',r:'hujjatlarim',b:'main',t:''};
 let cfg={...DEF};try{Object.assign(cfg,JSON.parse(localStorage.getItem('cfg')||'{}'))}catch(e){}
 ['o','r','b','t'].forEach(k=>{$(k).value=cfg[k]||''});
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let files=[],q='',fol='',opened=0;
+const encp=p=>p.split('/').map(encodeURIComponent).join('/');
+const api=p=>`https://api.github.com/repos/${cfg.o}/${cfg.r}/contents/${encp(p)}`;
+const rel=x=>x.path.slice(DIR.length+1), fd=x=>rel(x).includes('/')?rel(x).split('/')[0]:'', ext=x=>x.name.split('.').pop().toLowerCase();
+const H=(extra={})=>({...(cfg.t?{Authorization:'Bearer '+cfg.t}:{}),Accept:'application/vnd.github+json',...extra});
+const say=m=>$('msg').textContent=m;
 function mode(){$('up').classList.toggle('hide',!cfg.t)}
 function saveCfg(){cfg={o:$('o').value.trim()||DEF.o,r:$('r').value.trim()||DEF.r,b:$('b').value.trim()||DEF.b,t:$('t').value.trim()};
  try{localStorage.setItem('cfg',JSON.stringify(cfg))}catch(e){}
  $('setup').classList.add('hide');load()}
 function logout(){cfg.t='';$('t').value='';try{localStorage.setItem('cfg',JSON.stringify(cfg))}catch(e){}$('setup').classList.add('hide');load()}
-const say=m=>$('msg').textContent=m;
-const url=n=>`https://api.github.com/repos/${cfg.o}/${cfg.r}/contents/${DIR}${n?'/'+encodeURIComponent(n):''}`;
-const H=(extra={})=>({...(cfg.t?{Authorization:'Bearer '+cfg.t}:{}),Accept:'application/vnd.github+json',...extra});
+const ls=p=>fetch(api(p)+'?ref='+cfg.b+'&t='+Date.now(),{headers:H()});
+const note=t=>{$('list').innerHTML='';const p=document.createElement('p');p.style.color='var(--mu)';p.textContent=t;$('list').appendChild(p)};
 async function load(){
- mode();
- $('list').innerHTML='<p style="color:var(--mu)">Yuklanmoqda…</p>';
- const r=await fetch(url('')+'?ref='+cfg.b+'&t='+Date.now(),{headers:H()});
- if(r.status==404){$('list').innerHTML='<p style="color:var(--mu)">Hozircha hujjat yo\'q (yoki repo private — bunda 🔑 orqali token kiriting).</p>';return}
- if(!r.ok){$('list').innerHTML='<p style="color:#ff8d8d">Xato: '+r.status+'</p>';return}
- const a=(await r.json()).filter(x=>x.type=='file'&&x.name!='.gitkeep');
- $('list').innerHTML=a.length?'':'<p style="color:var(--mu)">Hozircha hujjat yo\'q.</p>';
- a.forEach((x,i)=>{const e=x.name.split('.').pop().toLowerCase(),d=document.createElement('div');d.className='item';d.style.animationDelay=(i*.07)+'s';
+ mode();note('Yuklanmoqda…');
+ const r=await ls(DIR);
+ if(r.status==404){files=[];render();return}
+ if(!r.ok){note('Xato: '+r.status);return}
+ const a=await r.json(),all=a.filter(x=>x.type=='file'),dirs=a.filter(x=>x.type=='dir');
+ const subs=await Promise.all(dirs.map(d=>ls(d.path).then(s=>s.ok?s.json():[])));
+ subs.forEach(s=>all.push(...s.filter(x=>x.type=='file')));
+ files=all.filter(x=>x.name!='.gitkeep');
+ render();
+ const p=new URLSearchParams(location.search).get('f');
+ if(p&&!opened){opened=1;const x=files.find(y=>rel(y)==p);if(x)present(x,ext(x))}
+}
+function render(){
+ const fl=[...new Set(files.map(fd))].filter(Boolean).sort();
+ if(fol&&!fl.includes(fol))fol='';
+ $('chips').innerHTML='';
+ if(fl.length)['',...fl].forEach(f=>{const b=document.createElement('button');b.className=f==fol?'':'sec';b.textContent=f||'Barchasi';b.onclick=()=>{fol=f;render()};$('chips').appendChild(b)});
+ $('fl').innerHTML='';fl.forEach(f=>{const o=document.createElement('option');o.value=f;$('fl').appendChild(o)});
+ const ql=q.toLowerCase(),L=files.filter(x=>(!fol||fd(x)==fol)&&rel(x).toLowerCase().includes(ql)).sort((a,b)=>rel(a).localeCompare(rel(b)));
+ if(!L.length){note(files.length?'Hech narsa topilmadi.':'Hozircha hujjat yo\'q (repo private bo\'lsa, 🔑 orqali token kiriting).');return}
+ $('list').innerHTML='';let last=null;
+ L.forEach((x,i)=>{
+  if(fl.length&&fd(x)!==last){last=fd(x);const h=document.createElement('div');h.className='gh';h.textContent=last?'📁 '+last:'📄 Umumiy';$('list').appendChild(h)}
+  const e=ext(x),d=document.createElement('div');d.className='item';d.style.animationDelay=(i*.05)+'s';
   const tg=document.createElement('span');tg.className='tag';tg.textContent=e.toUpperCase();
   const nm=document.createElement('span');nm.className='nm';nm.textContent=x.name;
   const sz=document.createElement('small');sz.style.color='var(--mu)';sz.textContent=(x.size/1048576).toFixed(2)+' MB';nm.appendChild(document.createElement('br'));nm.appendChild(sz);
@@ -125,57 +172,110 @@ async function load(){
   const row=document.createElement('div');row.className='row';
   const B=(t,c,fn)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=fn;row.appendChild(b)};
   if(e=='pdf'||e=='pptx'||e=='ppt')B('▶ Taqdim etish','',()=>present(x,e));
+  B('🔗 Link / QR','sec',()=>share(x));
   B('⬇ Yuklab olish','sec',()=>dl(x));
-  if(cfg.t){B('✎ Nomini o\'zgartirish','sec',()=>ren(x));
-  B('⟳ Almashtirish','sec',()=>rep(x));
-  B('🗑 O\'chirish','dng',()=>del(x));}
+  if(cfg.t){B('✎ Nom / ko\'chirish','sec',()=>ren(x));B('⟳ Almashtirish','sec',()=>rep(x));B('🗑 O\'chirish','dng',()=>del(x))}
   d.appendChild(row);$('list').appendChild(d)})
 }
 async function raw(x){const r=await fetch(x.url,{headers:H({Accept:'application/vnd.github.raw'})});if(!r.ok)throw 0;return r.blob()}
 async function dl(x){try{const b=await raw(x),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=x.name;a.click()}catch(e){alert('Yuklab olib bo\'lmadi')}}
 function b64(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result.split(',')[1]);r.readAsDataURL(file)})}
-async function put(name,file){
- let sha;const g=await fetch(url(name)+'?ref='+cfg.b,{headers:H()});if(g.ok)sha=(await g.json()).sha;
- const r=await fetch(url(name),{method:'PUT',headers:H({'Content-Type':'application/json'}),body:JSON.stringify({message:'upload '+name,content:await b64(file),branch:cfg.b,sha})});
+async function put(p,file){
+ let sha;const g=await fetch(api(p)+'?ref='+cfg.b,{headers:H()});if(g.ok)sha=(await g.json()).sha;
+ const r=await fetch(api(p),{method:'PUT',headers:H({'Content-Type':'application/json'}),body:JSON.stringify({message:'upload '+p,content:await b64(file),branch:cfg.b,sha})});
  if(!r.ok)throw new Error(r.status)}
-async function upAll(files){
+async function upAll(fs_){
  if(!cfg.t){say('Yuklash uchun 🔑 orqali token kiriting');setup.classList.remove('hide');return}
- for(const f of files){say('Yuklanmoqda: '+f.name+' …');try{await put(f.name,f)}catch(e){say('Xato: '+f.name+' ('+e.message+')');return}}
+ const fo=$('fi').value.replace(/[\\/]+/g,'-').replace(/^\.+/,'').trim();
+ for(const f of fs_){say('Yuklanmoqda: '+f.name+' …');try{await put(DIR+'/'+(fo?fo+'/':'')+f.name,f)}catch(e){say('Xato: '+f.name+' ('+e.message+')');return}}
  say('✓ Yuklandi');load()}
 $('f').onchange=e=>upAll([...e.target.files]);
 const dr=$('drop');dr.ondragover=e=>{e.preventDefault();dr.classList.add('on')};dr.ondragleave=()=>dr.classList.remove('on');
 dr.ondrop=e=>{e.preventDefault();dr.classList.remove('on');upAll([...e.dataTransfer.files])};
-async function del(x){if(!confirm(x.name+' o\'chirilsinmi?'))return;
- await fetch(url(x.name),{method:'DELETE',headers:H({'Content-Type':'application/json'}),body:JSON.stringify({message:'delete',sha:x.sha,branch:cfg.b})});load()}
-async function ren(x){const n=prompt('Yangi nom:',x.name);if(!n||n==x.name)return;say('Nomi o\'zgartirilmoqda…');
- try{const b=await raw(x);await put(n,b);await fetch(url(x.name),{method:'DELETE',headers:H({'Content-Type':'application/json'}),body:JSON.stringify({message:'rename',sha:x.sha,branch:cfg.b})});say('✓ Tayyor')}catch(e){say('Xato')}load()}
+const delp=x=>fetch(api(x.path),{method:'DELETE',headers:H({'Content-Type':'application/json'}),body:JSON.stringify({message:'delete',sha:x.sha,branch:cfg.b})});
+async function del(x){if(!confirm(rel(x)+' o\'chirilsinmi?'))return;await delp(x);load()}
+async function ren(x){const n=(prompt('Yangi nom (papkaga ko\'chirish: Papka/nom.pdf):',rel(x))||'').replace(/^\/+/,'').trim();
+ if(!n||n==rel(x)||n.split('/').includes('..'))return;say('Bajarilmoqda…');
+ try{const b=await raw(x);await put(DIR+'/'+n,b);await delp(x);say('✓ Tayyor')}catch(e){say('Xato')}load()}
 function rep(x){const i=document.createElement('input');i.type='file';i.onchange=async()=>{const f=i.files[0];if(!f)return;say('Almashtirilmoqda…');
- try{await put(x.name,f);say('✓ Tahrirlangan fayl almashtirildi')}catch(e){say('Xato')}load()};i.click()}
+ try{await put(x.path,f);say('✓ Tahrirlangan fayl almashtirildi')}catch(e){say('Xato')}load()};i.click()}
+
+/* Link va QR */
+function share(x){const u=location.origin+location.pathname+'?f='+encodeURIComponent(rel(x));
+ $('mt').textContent=x.name;$('mu').value=u;$('qr').innerHTML='';
+ if(window.QRCode)new QRCode($('qr'),{text:u,width:200,height:200,colorDark:'#031210',colorLight:'#ffffff'});
+ $('md').classList.add('show')}
+function cp(){const i=$('mu');i.select();(navigator.clipboard?navigator.clipboard.writeText(i.value):Promise.reject()).catch(()=>document.execCommand('copy'))}
 
 /* Taqdimot */
-let pdf=null,pg=1;
+let pdf=null,pg=1,draws={},tid=0;
 async function present(x,e){
- $('viewer').classList.add('show');$('vt').textContent=x.name;const body=$('vbody');body.innerHTML='<p style="color:#8fb3ad">Yuklanmoqda…</p>';
+ $('viewer').classList.add('show');$('vt').textContent=x.name;const c=$('vcont');c.innerHTML='<p style="color:#8fb3ad">Yuklanmoqda…</p>';
+ setTool('');draws={};pdf=null;tid++;sizeOv();$('th').classList.remove('open');$('th').innerHTML='';
+ $('bth').style.display=e=='pdf'?'':'none';
  if(e=='pdf'){
   try{const buf=await (await raw(x)).arrayBuffer();pdf=await pdfjsLib.getDocument({data:buf}).promise;pg=1;
-   body.innerHTML='<canvas id="cv"></canvas><div class="nav" style="left:0" onclick="go(-1)"></div><div class="nav" style="right:0" onclick="go(1)"></div>';draw()}
-  catch(err){body.innerHTML='<p style="color:#ff8d8d">PDF ochilmadi</p>'}
+   c.innerHTML='<canvas id="cv"></canvas><div class="nav" style="left:0" onclick="go(-1)"></div><div class="nav" style="right:0" onclick="go(1)"></div>';draw()}
+  catch(err){c.innerHTML='<p style="color:#ff8d8d">PDF ochilmadi</p>'}
   $('pr').onclick=()=>go(-1);$('nx').onclick=()=>go(1);$('pr').style.display=$('nx').style.display='';
  }else{
   $('pr').style.display=$('nx').style.display='none';
-  const src=encodeURIComponent(x.download_url);
-  body.innerHTML=`<iframe allowfullscreen src="https://view.officeapps.live.com/op/embed.aspx?src=${src}"></iframe>`}
+  c.innerHTML=`<iframe allowfullscreen src="https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(x.download_url)}"></iframe>`}
 }
-async function draw(){const p=await pdf.getPage(pg),w=$('vbody'),v=p.getViewport({scale:1}),
- s=Math.min(w.clientWidth/v.width,w.clientHeight/v.height)*(devicePixelRatio||1),vp=p.getViewport({scale:s}),c=$('cv');
- c.width=vp.width;c.height=vp.height;c.style.width=vp.width/(devicePixelRatio||1)+'px';c.style.height=vp.height/(devicePixelRatio||1)+'px';
- await p.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;$('vt').textContent=pg+' / '+pdf.numPages}
-function go(d){if(!pdf)return;const n=pg+d;if(n<1||n>pdf.numPages)return;pg=n;draw()}
+async function draw(){const p=await pdf.getPage(pg),w=$('vbody'),v=p.getViewport({scale:1}),dp=devicePixelRatio||1,
+ s=Math.min(w.clientWidth/v.width,w.clientHeight/v.height)*dp,vp=p.getViewport({scale:s}),c=$('cv');
+ c.width=vp.width;c.height=vp.height;c.style.width=vp.width/dp+'px';c.style.height=vp.height/dp+'px';
+ await p.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;$('vt').textContent=pg+' / '+pdf.numPages;
+ sizeOv();restore();mark()}
+function go(d){if(!pdf)return;jump(pg+d)}
+function jump(n){if(!pdf||n<1||n>pdf.numPages)return;saveDraw();pg=n;draw()}
 function fs(){const v=$('viewer');document.fullscreenElement?document.exitFullscreen():v.requestFullscreen&&v.requestFullscreen()}
-function closeV(){if(document.fullscreenElement)document.exitFullscreen();$('viewer').classList.remove('show');$('vbody').innerHTML='';pdf=null}
-addEventListener('keydown',e=>{if(!$('viewer').classList.contains('show'))return;
- if(['ArrowRight','PageDown',' '].includes(e.key))go(1);if(['ArrowLeft','PageUp'].includes(e.key))go(-1);if(e.key=='Escape'&&!document.fullscreenElement)closeV();if(e.key=='f')fs()});
-addEventListener('resize',()=>pdf&&draw());
+function closeV(){if(document.fullscreenElement)document.exitFullscreen();if(tm)timer();setTool('');tid++;pdf=null;
+ $('viewer').classList.remove('show');$('vcont').innerHTML='';$('th').innerHTML='';$('th').classList.remove('open');
+ if(location.search){history.replaceState(null,'',location.pathname)}}
+
+/* Slaydlar ro'yxati */
+function togTh(){const t=$('th');t.classList.toggle('open');if(t.classList.contains('open')&&!t.children.length)thumbs();
+ setTimeout(()=>{if(pdf){saveDraw();draw()}},300)}
+async function thumbs(){const t=pdf,id=tid,box=$('th');
+ for(let i=1;i<=t.numPages;i++){if(id!=tid||pdf!==t)return;const p=await t.getPage(i),v=p.getViewport({scale:1}),vp=p.getViewport({scale:130/v.width}),c=document.createElement('canvas');
+  c.width=vp.width;c.height=vp.height;c.dataset.i=i;c.onclick=()=>jump(i);box.appendChild(c);await p.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;mark()}}
+function mark(){document.querySelectorAll('#th canvas').forEach(c=>{const on=c.dataset.i==pg;c.classList.toggle('cur',on);if(on&&$('th').classList.contains('open'))c.scrollIntoView({block:'nearest'})})}
+
+/* Qalam va lazer */
+const ov=$('ov'),laser=$('laser'),COL=['#ffd36b','#ff5a5a','#3ee0cf','#ffffff'];
+let tool='',pc=0,pen=0,last,dirty={};
+function sizeOv(){const b=$('vbody');ov.width=b.clientWidth;ov.height=b.clientHeight}
+function setTool(t){if(t=='pen'&&tool=='pen')pc=(pc+1)%COL.length;tool=(t=='laser'&&tool=='laser')?'':t;
+ ov.style.pointerEvents=tool?'auto':'none';ov.style.cursor=tool=='laser'?'none':'crosshair';laser.style.display='none';
+ ['bt0','bt1','bt2'].forEach((id,i)=>$(id).classList.toggle('on',(i==0&&!tool)||(i==1&&tool=='pen')||(i==2&&tool=='laser')));
+ $('bt1').style.color=tool=='pen'?COL[pc]:''}
+const pos=e=>{const r=ov.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+ov.onpointerdown=e=>{if(tool=='pen'){pen=1;last=pos(e);ov.setPointerCapture(e.pointerId)}};
+ov.onpointermove=e=>{const p=pos(e);
+ if(tool=='laser'){laser.style.display='block';laser.style.left=p.x+'px';laser.style.top=p.y+'px'}
+ else if(tool=='pen'&&pen){const c=ov.getContext('2d');c.strokeStyle=COL[pc];c.lineWidth=4;c.lineCap='round';c.beginPath();c.moveTo(last.x,last.y);c.lineTo(p.x,p.y);c.stroke();last=p;dirty[pg]=1}};
+ov.onpointerup=ov.onpointercancel=()=>{pen=0};
+ov.onpointerleave=()=>{if(tool=='laser')laser.style.display='none'};
+function saveDraw(){if(pdf&&dirty[pg])draws[pg]=ov.toDataURL()}
+function restore(){if(draws[pg]){const i=new Image();i.onload=()=>ov.getContext('2d').drawImage(i,0,0);i.src=draws[pg]}}
+function clr(){ov.getContext('2d').clearRect(0,0,ov.width,ov.height);delete draws[pg];delete dirty[pg]}
+
+/* Taymer */
+let tm=null,left=0;
+function timer(){if(tm){clearInterval(tm);tm=null;$('tm').textContent='';return}
+ const m=parseFloat(prompt('Necha daqiqa?','10'));if(!m||m<=0)return;left=Math.round(m*60);tick();tm=setInterval(tick,1000)}
+function tick(){const el=$('tm'),m=Math.floor(left/60),s=left%60;
+ el.textContent='⏱ '+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');el.style.color=left<=60?'#ff7b7b':'var(--gold)';
+ if(left<=0){clearInterval(tm);tm=null;el.textContent='⏰ Vaqt tugadi!';navigator.vibrate&&navigator.vibrate([300,150,300]);return}left--}
+
+addEventListener('keydown',e=>{
+ if(e.key=='Escape'&&$('md').classList.contains('show')){$('md').classList.remove('show');return}
+ if(!$('viewer').classList.contains('show')||e.target.tagName=='INPUT')return;
+ if(['ArrowRight','PageDown',' '].includes(e.key))go(1);if(['ArrowLeft','PageUp'].includes(e.key))go(-1);
+ if(e.key=='Escape'&&!document.fullscreenElement)closeV();
+ const k=e.key.toLowerCase();if(k=='f')fs();if(k=='p')setTool('pen');if(k=='l')setTool('laser');if(k=='c')clr();if(k=='t')timer();if(k=='s'&&pdf)togTh()});
+addEventListener('resize',()=>{if(pdf){saveDraw();draw()}});
 load();
 </script>
 </body>
